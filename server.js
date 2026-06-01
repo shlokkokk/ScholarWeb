@@ -5,6 +5,14 @@ import { fileURLToPath } from "node:url";
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = join(process.cwd(), "public");
+const STATIC_FILES = {
+  "/": "index.html",
+  "/index.html": "index.html",
+  "/styles.css": "styles.css",
+  "/app.js": "app.js"
+};
+const VERIFIED_CONFIDENCE = 0.84;
+const NEEDS_REVIEW_CONFIDENCE = 0.45;
 
 const state = {
   syllabusFingerprint: {
@@ -45,6 +53,24 @@ const extractTopics = (syllabusText = "") =>
       examWeight: Math.max(5, 30 - index)
     }));
 
+const countContradictionSignals = (content = "") => {
+  const matches = content.match(/\b(contradict|incorrect|false|myth|not|never)\b/gi);
+  return matches ? matches.length : 0;
+};
+
+const claimVerificationScore = (claim = "") => {
+  const wordCount = claim.trim().split(/\s+/).filter(Boolean).length;
+  const signals = [
+    /\baccording to\b/i,
+    /\bstudy\b/i,
+    /\bdata\b/i,
+    /\b(evidence|measured|observed)\b/i,
+    /\b\d+([.,]\d+)?\b/
+  ];
+  const matchedSignals = signals.reduce((count, pattern) => count + Number(pattern.test(claim)), 0);
+  return { wordCount, matchedSignals };
+};
+
 const routes = {
   "GET /api/health": async (_req, res) => {
     json(res, 200, { status: "ok", service: "ScholarWeb API" });
@@ -73,10 +99,11 @@ const routes = {
     const relevantTopics = state.syllabusFingerprint.topics
       .filter(({ topic }) => query.includes(topic.toLowerCase()))
       .slice(0, 3);
+    const contradictions = relevantTopics.length ? countContradictionSignals(body.content || "") : 0;
 
     json(res, 200, {
       relevantTopics,
-      contradictions: relevantTopics.length ? 1 : 0,
+      contradictions,
       noteSuggestion: relevantTopics.length
         ? "High-signal page. Add summary to notes."
         : "Low relevance. Continue browsing."
@@ -96,11 +123,15 @@ const routes = {
     if (body === null) return json(res, 400, { error: "Invalid JSON body" });
 
     const matchedTopics = state.syllabusFingerprint.topics.slice(0, 3);
+    const totalTopics = state.syllabusFingerprint.topics.length;
+    const syllabusCoveragePercent = totalTopics
+      ? Math.min(100, Math.round((matchedTopics.length / totalTopics) * 100))
+      : 0;
     json(res, 200, {
       lectureUrl: body.lectureUrl || "",
       summary: "Core concepts explained with examples and problem-solving patterns.",
       predictedQuestions: matchedTopics.map(({ topic }) => `Explain ${topic} with an exam-style derivation.`),
-      syllabusCoveragePercent: matchedTopics.length * 12
+      syllabusCoveragePercent
     });
   },
   "POST /api/misinformation/verify": async (req, res) => {
@@ -108,11 +139,12 @@ const routes = {
     if (body === null) return json(res, 400, { error: "Invalid JSON body" });
 
     const claim = (body.claim || "").trim();
-    const verified = claim.length > 20;
+    const { wordCount, matchedSignals } = claimVerificationScore(claim);
+    const verified = wordCount >= 6 && matchedSignals >= 2;
     json(res, 200, {
       claim,
       verdict: verified ? "verified" : "needs-review",
-      confidence: verified ? 0.84 : 0.45,
+      confidence: verified ? VERIFIED_CONFIDENCE : NEEDS_REVIEW_CONFIDENCE,
       sourcesChecked: 3
     });
   },
@@ -154,9 +186,15 @@ const getMime = (path) => {
 const createApp = () =>
   createServer(async (req, res) => {
     const key = `${req.method} ${req.url}`;
-    if (routes[key]) return routes[key](req, res);
+    if (Object.hasOwn(routes, key)) {
+      const routeHandler = routes[key];
+      if (typeof routeHandler === "function") {
+        return routeHandler(req, res);
+      }
+    }
 
-    const path = req.url === "/" ? "/index.html" : req.url;
+    const path = STATIC_FILES[req.url];
+    if (!path) return json(res, 404, { error: "Not found" });
     try {
       const file = await readFile(join(PUBLIC_DIR, path));
       res.writeHead(200, { "Content-Type": getMime(path) });
