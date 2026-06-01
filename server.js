@@ -14,10 +14,17 @@ const STATIC_FILES = {
 const MAX_MATCHED_TOPICS = 3;
 const MAX_UNTOUCHED_TOPICS = 4;
 const SIMULATED_SOURCES_COUNT = 3;
-const VERIFIED_MIN_WORDS = 6;
-const VERIFIED_MIN_SIGNALS = 2;
-const VERIFIED_CONFIDENCE = 0.84; // used when both verification thresholds are met
-const NEEDS_REVIEW_CONFIDENCE = 0.45; // weak claim signal match; requires manual verification
+const VERIFIED_MIN_WORDS = 6; // minimum claim detail needed before auto-marking as verified
+const VERIFIED_MIN_SIGNALS = 2; // at least two evidence-style signals required for verified verdict
+const VERIFIED_CONFIDENCE = 0.84; // high-confidence UI band for verified verdicts in MVP heuristic mode
+const NEEDS_REVIEW_CONFIDENCE = 0.45; // low-confidence UI band when claim lacks sufficient evidence signals
+const CLAIM_SIGNAL_PATTERNS = [
+  /\baccording to\b/i,
+  /\bstudy\b/i,
+  /\bdata\b/i,
+  /\b(evidence|measured|observed)\b/i,
+  /\b\d+([.,]\d+)?\b/
+];
 
 const state = {
   syllabusFingerprint: {
@@ -65,14 +72,10 @@ const countContradictionSignals = (content = "") => {
 
 const claimVerificationScore = (claim = "") => {
   const wordCount = claim.trim().split(/\s+/).filter(Boolean).length;
-  const signals = [
-    /\baccording to\b/i,
-    /\bstudy\b/i,
-    /\bdata\b/i,
-    /\b(evidence|measured|observed)\b/i,
-    /\b\d+([.,]\d+)?\b/
-  ];
-  const matchedSignals = signals.reduce((count, pattern) => count + Number(pattern.test(claim)), 0);
+  const matchedSignals = CLAIM_SIGNAL_PATTERNS.reduce(
+    (count, pattern) => count + Number(pattern.test(claim)),
+    0
+  );
   return { wordCount, matchedSignals };
 };
 
@@ -162,7 +165,7 @@ const routes = {
 
     const examDate = new Date(body.examDate || state.syllabusFingerprint.examDate || Date.now());
     const diffMs = examDate.getTime() - Date.now();
-    const daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    const daysLeft = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
 
     const untouchedTopics = state.syllabusFingerprint.topics
       .filter(({ topic }) => !state.knowledgeGraph.mastered.includes(topic))

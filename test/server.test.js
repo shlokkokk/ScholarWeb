@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { once } from "node:events";
 import { createApp, extractTopics } from "../server.js";
 
+const closeServer = (app) => new Promise((resolve) => app.close(resolve));
+
 test("extractTopics builds weighted topic list", () => {
   const result = extractTopics("Kinematics\nThermodynamics\nElectrostatics");
   assert.equal(result.length, 3);
@@ -35,7 +37,7 @@ test("syllabus dna and countdown endpoints respond", async () => {
   const payload = await countdownRes.json();
   assert.ok(payload.daysLeft > 0);
 
-  app.close();
+  await closeServer(app);
 });
 
 test("countdown floors negative days at zero", async () => {
@@ -55,5 +57,5 @@ test("countdown floors negative days at zero", async () => {
   const payload = await countdownRes.json();
   assert.equal(payload.daysLeft, 0);
 
-  app.close();
+  await closeServer(app);
 });
