@@ -11,8 +11,10 @@ const STATIC_FILES = {
   "/styles.css": "styles.css",
   "/app.js": "app.js"
 };
-const VERIFIED_CONFIDENCE = 0.84;
-const NEEDS_REVIEW_CONFIDENCE = 0.45;
+const MAX_MATCHED_TOPICS = 3;
+const MAX_UNTOUCHED_TOPICS = 4;
+const VERIFIED_CONFIDENCE = 0.84; // stronger claim signal match (6+ words and 2+ evidence signals)
+const NEEDS_REVIEW_CONFIDENCE = 0.45; // weak claim signal match; requires manual verification
 
 const state = {
   syllabusFingerprint: {
@@ -98,7 +100,7 @@ const routes = {
     const query = `${body.title || ""} ${body.content || ""}`.toLowerCase();
     const relevantTopics = state.syllabusFingerprint.topics
       .filter(({ topic }) => query.includes(topic.toLowerCase()))
-      .slice(0, 3);
+      .slice(0, MAX_MATCHED_TOPICS);
     const contradictions = relevantTopics.length ? countContradictionSignals(body.content || "") : 0;
 
     json(res, 200, {
@@ -122,7 +124,7 @@ const routes = {
     const body = await parseBody(req);
     if (body === null) return json(res, 400, { error: "Invalid JSON body" });
 
-    const matchedTopics = state.syllabusFingerprint.topics.slice(0, 3);
+    const matchedTopics = state.syllabusFingerprint.topics.slice(0, MAX_MATCHED_TOPICS);
     const totalTopics = state.syllabusFingerprint.topics.length;
     const syllabusCoveragePercent = totalTopics
       ? Math.min(100, Math.round((matchedTopics.length / totalTopics) * 100))
@@ -158,7 +160,7 @@ const routes = {
 
     const untouchedTopics = state.syllabusFingerprint.topics
       .filter(({ topic }) => !state.knowledgeGraph.mastered.includes(topic))
-      .slice(0, 4);
+      .slice(0, MAX_UNTOUCHED_TOPICS);
 
     json(res, 200, {
       examDate: examDate.toISOString(),
