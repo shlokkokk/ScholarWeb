@@ -13,7 +13,9 @@ const STATIC_FILES = {
 };
 const MAX_MATCHED_TOPICS = 3;
 const MAX_UNTOUCHED_TOPICS = 4;
-const VERIFIED_CONFIDENCE = 0.84; // stronger claim signal match (6+ words and 2+ evidence signals)
+const VERIFIED_MIN_WORDS = 6;
+const VERIFIED_MIN_SIGNALS = 2;
+const VERIFIED_CONFIDENCE = 0.84; // stronger claim signal match (VERIFIED_MIN_WORDS + VERIFIED_MIN_SIGNALS)
 const NEEDS_REVIEW_CONFIDENCE = 0.45; // weak claim signal match; requires manual verification
 
 const state = {
@@ -97,11 +99,13 @@ const routes = {
     const body = await parseBody(req);
     if (body === null) return json(res, 400, { error: "Invalid JSON body" });
 
-    const query = `${body.title || ""} ${body.content || ""}`.toLowerCase();
+    const title = (body.title || "").toLowerCase();
+    const content = (body.content || "").toLowerCase();
+    const query = `${title} ${content}`;
     const relevantTopics = state.syllabusFingerprint.topics
       .filter(({ topic }) => query.includes(topic.toLowerCase()))
       .slice(0, MAX_MATCHED_TOPICS);
-    const contradictions = relevantTopics.length ? countContradictionSignals(body.content || "") : 0;
+    const contradictions = relevantTopics.length ? countContradictionSignals(content) : 0;
 
     json(res, 200, {
       relevantTopics,
@@ -142,12 +146,13 @@ const routes = {
 
     const claim = (body.claim || "").trim();
     const { wordCount, matchedSignals } = claimVerificationScore(claim);
-    const verified = wordCount >= 6 && matchedSignals >= 2;
+    const verified = wordCount >= VERIFIED_MIN_WORDS && matchedSignals >= VERIFIED_MIN_SIGNALS;
     json(res, 200, {
       claim,
       verdict: verified ? "verified" : "needs-review",
       confidence: verified ? VERIFIED_CONFIDENCE : NEEDS_REVIEW_CONFIDENCE,
-      sourcesChecked: 3
+      sourcesChecked: 3,
+      sourceCheckMode: "simulated"
     });
   },
   "POST /api/exam/countdown": async (req, res) => {
