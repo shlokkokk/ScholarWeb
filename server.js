@@ -13,9 +13,10 @@ const STATIC_FILES = {
 };
 const MAX_MATCHED_TOPICS = 3;
 const MAX_UNTOUCHED_TOPICS = 4;
+const SIMULATED_SOURCES_COUNT = 3;
 const VERIFIED_MIN_WORDS = 6;
 const VERIFIED_MIN_SIGNALS = 2;
-const VERIFIED_CONFIDENCE = 0.84; // stronger claim signal match (VERIFIED_MIN_WORDS + VERIFIED_MIN_SIGNALS)
+const VERIFIED_CONFIDENCE = 0.84; // used when both verification thresholds are met
 const NEEDS_REVIEW_CONFIDENCE = 0.45; // weak claim signal match; requires manual verification
 
 const state = {
@@ -128,15 +129,15 @@ const routes = {
     const body = await parseBody(req);
     if (body === null) return json(res, 400, { error: "Invalid JSON body" });
 
-    const matchedTopics = state.syllabusFingerprint.topics.slice(0, MAX_MATCHED_TOPICS);
+    const previewTopics = state.syllabusFingerprint.topics.slice(0, MAX_MATCHED_TOPICS);
     const totalTopics = state.syllabusFingerprint.topics.length;
     const syllabusCoveragePercent = totalTopics
-      ? Math.min(100, Math.round((matchedTopics.length / totalTopics) * 100))
+      ? Math.min(100, Math.round((previewTopics.length / totalTopics) * 100))
       : 0;
     json(res, 200, {
       lectureUrl: body.lectureUrl || "",
       summary: "Core concepts explained with examples and problem-solving patterns.",
-      predictedQuestions: matchedTopics.map(({ topic }) => `Explain ${topic} with an exam-style derivation.`),
+      predictedQuestions: previewTopics.map(({ topic }) => `Explain ${topic} with an exam-style derivation.`),
       syllabusCoveragePercent
     });
   },
@@ -151,7 +152,7 @@ const routes = {
       claim,
       verdict: verified ? "verified" : "needs-review",
       confidence: verified ? VERIFIED_CONFIDENCE : NEEDS_REVIEW_CONFIDENCE,
-      sourcesChecked: 3,
+      sourcesChecked: SIMULATED_SOURCES_COUNT,
       sourceCheckMode: "simulated"
     });
   },
@@ -211,7 +212,7 @@ const createApp = () =>
     }
   });
 
-if (process.argv[1] && process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
   createApp().listen(PORT, () => {
     console.log(`ScholarWeb running on http://localhost:${PORT}`);
   });
