@@ -1,0 +1,64 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  background: #040617;
+  color: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #1e293b, #020617 45%);
+}
+
+.container {
+  width: min(1100px, 92vw);
+  margin: 2rem auto;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  margin-bottom: 0.5rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.card,
+.output {
+  border: 1px solid #334155;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  padding: 1rem;
+}
+
+input,
+textarea,
+button {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #475569;
+  background: #0f172a;
+  color: inherit;
+  padding: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  font-weight: 700;
+}
+
+pre {
+  white-space: pre-wrap;
+}

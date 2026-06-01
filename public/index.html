@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ScholarWeb</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <section class="hero">
+        <h1>ScholarWeb</h1>
+        <p>Syllabus-intelligent web companion for exam-first learning.</p>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h2>1. Syllabus DNA Upload</h2>
+          <textarea id="syllabusText" rows="5" placeholder="Paste syllabus topics..."></textarea>
+          <input id="examDate" type="date" />
+          <button data-action="dna">Extract DNA</button>
+        </article>
+
+        <article class="card">
+          <h2>2. Syllabus-Aware Overlay</h2>
+          <input id="overlayTitle" placeholder="Webpage title" />
+          <textarea id="overlayContent" rows="3" placeholder="Webpage content snippet"></textarea>
+          <button data-action="overlay">Analyze Page</button>
+        </article>
+
+        <article class="card">
+          <h2>3. Live Knowledge Graph</h2>
+          <input id="mastered" placeholder="Mastered topics (comma-separated)" />
+          <input id="gaps" placeholder="Gap topics (comma-separated)" />
+          <button data-action="graph">Update Graph</button>
+        </article>
+
+        <article class="card">
+          <h2>4. Lecture Intelligence</h2>
+          <input id="lectureUrl" placeholder="Lecture URL" />
+          <button data-action="lecture">Analyze Lecture</button>
+        </article>
+
+        <article class="card">
+          <h2>5. Misinformation Guard</h2>
+          <textarea id="claim" rows="3" placeholder="Paste factual claim"></textarea>
+          <button data-action="verify">Verify Claim</button>
+        </article>
+
+        <article class="card">
+          <h2>6. Exam Countdown Engine</h2>
+          <button data-action="countdown">Generate Countdown</button>
+        </article>
+      </section>
+
+      <section class="output">
+        <h2>Live Output</h2>
+        <pre id="output">Ready.</pre>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
