@@ -1,0 +1,11 @@
+{
+  "name": "scholarweb",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ScholarWeb initial full-stack scaffold",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  }
+}
